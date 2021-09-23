@@ -1,4 +1,5 @@
-discord.py
-requests
-python-decouple
 lxml
+requests
+discord.py
+python-decouple
+beautifulsoup4
