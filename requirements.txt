@@ -3,3 +3,5 @@ requests
 discord.py
 python-decouple
 beautifulsoup4
+discord-components
+discord-interactions

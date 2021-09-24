@@ -15,14 +15,16 @@ class Talks(commands.Cog):
         name = ctx.author.name
         response = f"FAAALA {name}, BELEZA?"
         await ctx.send(response)
+        # await ctx.send(response, tts=True)
 
 
     @commands.command(name="time", help="Avisa o time. Não requer argumento.")
-    async def send_hello(self, ctx):
+    async def team(self, ctx):
 
         name = ctx.author.name
         response = f"ALÔ TIME! {name} disse que vai ter jogo sim! LINE FECHADA É REALIDADE!"
         await ctx.send(response)
+        # await ctx.send(response, tts=True)
 
 
     @commands.command(name="segredo", help="Envia um segredo no privado. Não requer argumento.")

@@ -1,7 +1,11 @@
 import csv
+import datetime
 import requests
 import discord
-from discord.ext import commands
+import asyncio
+from discord.ext import commands, tasks
+from discord_components import DiscordComponents, Button, ButtonStyle
+from discord_interactions import InteractionType
 
 
 class Cvars(commands.Cog):
@@ -9,6 +13,7 @@ class Cvars(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.data = []
 
 
     # @commands.command(name="changes", help="Mostra as recentes mudanças na lista de Cvars no CS:GO. Não requer argumento")
@@ -29,6 +34,30 @@ class Cvars(commands.Cog):
 
         # await ctx.send(response)
 
+    @commands.Cog.listener()
+    async def on_ready(self):
+        self.current_time.start()
+        DiscordComponents(self.bot)
+
+
+    @tasks.loop(hours=24)
+    async def current_time(self):
+        try:# Updating self.data with merged.csv information every 24h
+            data = []
+            with open("./csv/merged.csv") as file:
+                file_csv = csv.reader(file, delimiter='|')
+                for line in file_csv:
+                    data.append(line)
+            
+            self.data = data
+            print('-->> self.data UPDATED with merged.csv information. <<--')
+
+
+        except Exception as error:
+            print("--> Erro em Updating self.data with merged.csv. <--")
+            print(error)
+
+
 
 
     @commands.command(
@@ -36,133 +65,102 @@ class Cvars(commands.Cog):
         help="Lista os Comandos e Variáveis. Argumentos: Name, Description (Opcional)"
         )
     async def command(self, ctx, name, description=""):
-        names = []
-        descriptions = []
-        show_names = []
-        show_desc = []
 
         try:
-            with open("./csv/name_description.csv") as file:
-                reader = csv.reader(file, delimiter=',')
-                # Create 2 lists: names and descriptions
-                for row in reader:
-                    names.append(row[0])
-                    descriptions.append(row[1])
-
-
-            if len(name) >= 3:
+            if len(name) < 3:# Check if input lenght is bigger than 3
+                await ctx.send(f"Oops... Name: '{name}' deve conter pelo menos 3 letras.")
+            else:
                 try:
-                    for n in names:
-                        if name in n:
-                            show_names.append(n)
-                            n_index = names.index(n)
-                            show_desc.append(descriptions[n_index])
+                    ind = []
+                    count = 0
 
-                    show_names = list(map(lambda x:x.strip(), show_names))
-                    show_desc = list(map(lambda x:x.strip(), show_desc))
-                    
-                    # Remove empty values from description list
-                    for i, d in enumerate(show_desc):
-                        if d == '':
-                            show_desc[i] = '-'
+                    for i, n in enumerate(self.data):
+                        if name in n[0]:
+                            count += 1
+                            ind.append(i)
+                        else:
+                            ...
+                    # print(ind)
+                    if count > 0:
+                        if count <= 5:
+                            try: # 1 <= Results <= 5
+                                embed_image = discord.Embed(
+                                    # title=f"Resultados de '!c {name} {description}'",
+                                    description=f"{count} resultado(s)...",
+                                    color=0x441CB9
+                                )
+                                embed_image.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar_url)
+                                embed_image.set_footer(text="Feito por " + self.bot.user.name, icon_url=self.bot.user.avatar_url)
+
+                                embed_image.add_field(name="Name", value=f"{self.data[ind[0]][0]}", inline="True")
+                                embed_image.add_field(name="Default Value", value=f"{self.data[ind[0]][1]}", inline="True")
+                                embed_image.add_field(name="Description", value=f"({self.data[ind[0]][2]}). {self.data[ind[0]][3]}", inline="True")
+
+                                for i in ind:
+                                    if ind.index(i) == 0:
+                                        ...
+                                    else:
+                                        embed_image.add_field(name="\u200b", value=f"{self.data[i][0]}", inline="True")
+                                        embed_image.add_field(name="\u200b", value=f"{self.data[i][1]}", inline="True")
+                                        embed_image.add_field(name="\u200b", value=f"({self.data[i][2]}). {self.data[i][3]}", inline="True")
+
+                                await ctx.send(embed=embed_image)
+
+
+                            except Exception as error:
+                                print("--> Erro em 1 <= Results <= 5 - embed_image - <--")
+                                print(error)
+
+                        else:# Pagination FIX
+                            try: # Results >= 5
+                                embed_image = discord.Embed(
+                                    description=f"{count} resultado(s)...",
+                                    color=0x441CB9
+                                )
+                                embed_image.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar_url)
+                                embed_image.set_footer(text="Feito por " + self.bot.user.name, icon_url=self.bot.user.avatar_url)
+
+                                embed_image.add_field(name="Name", value=f"{self.data[ind[0]][0]}", inline="True")
+                                embed_image.add_field(name="Default Value", value=f"{self.data[ind[0]][1]}", inline="True")
+                                embed_image.add_field(name="Description", value=f"({self.data[ind[0]][2]}). {self.data[ind[0]][3]}", inline="True")
+
+                                for i in ind:
+                                    if ind.index(i) == 0:
+                                        ...
+                                    else:
+                                        embed_image.add_field(name="\u200b", value=f"{self.data[i][0]}", inline="True")
+                                        embed_image.add_field(name="\u200b", value=f"{self.data[i][1]}", inline="True")
+                                        embed_image.add_field(name="\u200b", value=f"({self.data[i][2]}). {self.data[i][3]}", inline="True")
+
+                                await ctx.send(embed=embed_image)
+                                
+
+                            except Exception as error:
+                                print("--> Erro em Results >= 5 - Pagination embed_image - <--")
+                                print(error)
+
+
+                    else: # Results: 0
+                        try:
+                            embed_image = discord.Embed(
+                                description=f"{count} resultado(s)... 🚫",
+                                color=0x441CB9
+                            )
+                            embed_image.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar_url)
+                            embed_image.set_footer(text="Feito por " + self.bot.user.name, icon_url=self.bot.user.avatar_url)
+
+                            await ctx.send(embed=embed_image)
+
+
+                        except Exception as error:
+                            print("--> Erro em 0 Results - embed_image - <--")
+                            print(error)
+
 
                 except Exception as error:
-                        print(f"--> Erro ao criar listas: {show_names} e {show_desc} <--")
-                        print(error)
-                
-                # Results >= 1
-                if len(show_names) > 0:
-                    # Showing less than 5 Results
-                    if len(show_names) <= 5:
-                        try:
-                            embed_image = discord.Embed(
-                                # title=f"Resultados de '!c {name} {description}'",
-                                description=f"{len(show_names)} resultado(s)...",
-                                color=0x441CB9
-                            )
-                            embed_image.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar_url)
-                            embed_image.set_footer(text="Feito por " + self.bot.user.name, icon_url=self.bot.user.avatar_url)
-
-                            embed_image.add_field(name="Name", value="\u200b", inline="True")
-                            embed_image.add_field(name="Description", value="\u200b", inline="True")
-                            embed_image.add_field(name="\u200b", value="\u200b", inline="True")
-
-                            for i, s in enumerate(show_names):
-                                embed_image.add_field(name="\u200b", value=f"{s}", inline="True")
-                                embed_image.add_field(name="\u200b", value=f"{show_desc[i]}", inline="True")
-                                embed_image.add_field(name="\u200b", value="\u200b", inline="True")
-
-                            await ctx.send(embed=embed_image)
-
-                        except Exception as error:
-                            print("--> Erro em Results <= 5 embed_image <--")
-                            print(error)
-
-                    # Showing more than 5 results
-                    else:
-                        
-                        total = len(show_names)
-                                                
-                        try:
-                            embed_image = discord.Embed(
-                                # title=f"Resultados de '!c {name} {description}'",
-                                description=f"{len(show_names)} resultado(s)...",
-                                color=0x441CB9
-                            )
-                            embed_image.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar_url)
-                            embed_image.set_footer(text="Feito por " + self.bot.user.name, icon_url=self.bot.user.avatar_url)
-
-                            embed_image.add_field(name="Name", value="\u200b", inline="True")
-                            embed_image.add_field(name="Description", value="\u200b", inline="True")
-                            embed_image.add_field(name="\u200b", value="\u200b", inline="True")
-
-                            for i, s in enumerate(show_names):
-                                embed_image.add_field(name="\u200b", value=f"{s}", inline="True")
-                                embed_image.add_field(name="\u200b", value=f"{show_desc[i]}", inline="True")
-                                embed_image.add_field(name="\u200b", value="\u200b", inline="True")
-
-                            await ctx.send(embed=embed_image)
-
-                        except Exception as error:
-                            print("--> Erro em Results > 6 embed_image <--")
-                            print(error)
-                
-                # 0 Results
-                else:
-                    try:
-                        embed_image = discord.Embed(
-                            title=f"Resultados de '!c {name} {description}'",
-
-                            description=f"{len(show_names)} resultado(s)...",
-                            color=0x441CB9
-                        )
-
-                        embed_image.set_author(
-                            name=self.bot.user.name, icon_url=self.bot.user.avatar_url
-                        )
-                        embed_image.set_footer(
-                            text="Feito por " + self.bot.user.name, icon_url=self.bot.user.avatar_url
-                        )
-
-                        await ctx.send(embed=embed_image)
-
-                    except Exception as error:
-                        print("--> Erro em 0 Results embed_image <--")
+                        print(f"--> Erro ao encontrar resultados nas listas. <--")
                         print(error)
 
-
-
-
-
-
-
-
-
-
-
-                #await ctx.send(f"O valor do par {coin}/{base} é {price}")
-            else:
-                await ctx.send(f"Oops... Name: '{name}' deve conter pelo menos 3 letras.")
 
         except Exception as error:
             await ctx.send("Oops... Algo de errado não está certo!")
@@ -171,11 +169,3 @@ class Cvars(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Cvars(bot))
-
-
-# Name Description
-# https://developer.valvesoftware.com/wiki/Bind
-# Sintaxe
-
-#https://developer.valvesoftware.com/wiki/Special:RecentChangesLinked/List_of_CS:GO_Cvars
-#https://developer.valvesoftware.com/wiki/Bot_kill
