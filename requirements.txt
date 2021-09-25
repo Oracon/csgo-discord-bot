@@ -4,3 +4,4 @@ discord.py
 python-decouple
 beautifulsoup4
 reactionmenu
+html2image

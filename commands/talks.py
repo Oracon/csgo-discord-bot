@@ -22,8 +22,9 @@ class Talks(commands.Cog):
     async def team(self, ctx):
 
         name = ctx.author.name
-        response = f"ALÔ TIME! {name} disse que vai ter jogo sim! LINE FECHADA É REALIDADE!"
-        await ctx.send(response)
+
+        await ctx.send("ALÔ TIME!", tts=True)
+        await ctx.send(f"\@everyone. {name} disse que vai ter jogo sim! LINE FECHADA É REALIDADE!")
         # await ctx.send(response, tts=True)
 
 

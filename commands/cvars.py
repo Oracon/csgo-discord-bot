@@ -4,58 +4,119 @@ import requests
 import discord
 import asyncio
 import math
+from bs4 import BeautifulSoup
 from discord.ext import commands, tasks
 from reactionmenu import ReactionMenu, Button, ButtonType
+from html2image import Html2Image
 
 
 class Cvars(commands.Cog):
-    """Works with Cvars"""
+    """
+    -->>> Works with Cvars <<<--
+
+    `!c 'command'` - Mostra todos os Comandos que contenham 'command',
+        além de valores padrões, atributos, descrição e nome completo
+        do comando.
+
+    `!update` - Mostra o Patch mais recente de atualizações.
+    
+    `!update 'a'` (com argumento opcional) - Mostra link para todas as
+        atualizações.
+    """
+
 
     def __init__(self, bot):
         self.bot = bot
         self.data = []
 
 
-    '''
-    @commands.command(name="update", help="Mostra as notas de atualização do CS:GO. Não requer argumento")
-    async def update(self, ctx):
+    
+    @commands.command(name="update", help="Mostra Notas de Atualização mais recente. Argumentos: 'all' (Opcional)")
+    async def update(self, ctx, option=''):
 
-        try:
+        try:# All Release Notes
             url = "https://blog.counter-strike.net/index.php/category/updates/"
-        
-            response = requests.get(url)
-            response.raise_for_status()  # raises exception when not a 2xx response
+            if option != '':
+                try:
+                    await ctx.send("Digite `!update` para ver o Patch mais recente.")
+                    await ctx.send(f"Todos os Patchs: {url}")
 
-            tree = BeautifulSoup(response.text, "lxml")
 
-            print(tree)
+                except Exception as error:
+                        await ctx.send("Oops... Algo de errado não está certo!")
+                        print("--> Erro ao mostrar All Release Notes. <--")
+                        print(error)
 
+
+            else: # Short Release Note Screenshot
+                try:
+                    response = requests.get(url)
+                    response.raise_for_status()  # raises exception when not a 2xx response
+
+                    html = BeautifulSoup(response.text, "lxml")
+                    
+                    main_blog_div = html.find("div", id="post_container")# Get <div id="main_blog">
+                    
+                    first_div = main_blog_div.find_all("div", limit=1)# Get the first <div class="inner_post"> (Last Patch)
+                    first_div = first_div[0]# Remove html from list
+
+                    h2 = first_div.find_all("h2", limit=1)# Get Release notes title
+                    h2 = h2[0]# Remove html from list
+
+                    ps = first_div.find_all("p")# Get all p - [0] is Post date
+                    # print(*ps)# --> * Make it print one by one
+
+                    ps_str = '\n'.join(map(str, ps)) #Concatenate ps out of the list
+                    # print(ps_str)
+                    
+
+                    html_str = f"""
+                        <!DOCTYPE html>
+                        <html lang="en">
+                            <head>
+                                <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+                                <link rel="stylesheet" href="https://blog.counter-strike.net/wp-content/themes/counterstrike_launch/twentytwenty.css" type="text/css">
+                                <link href="https://fonts.googleapis.com/css?family=Quantico&amp;display=swap" rel="stylesheet">
+                                <link href="https://fonts.googleapis.com/css?family=Changa&amp;display=swap&amp;subset=arabic,latin-ext" rel="stylesheet">
+                                <link rel="stylesheet" href="https://blog.counter-strike.net/wp-content/themes/counterstrike_launch/style.css?v=1051" type="text/css" media="screen,projection">
+                            </head>
+                            <body>
+                                <div class="inner_post">
+                                    {h2}
+                                    {ps_str}
+                                </div>
+                            </body>
+                        </html>
+                    """
+
+                    # No Need for CSS
+                    # css_str = ['body {background-color: #0b0e13;}', 'body {color: #bababa;}']
+                    
+                    # Instantiate html2image
+                    hti = Html2Image()
+                    
+                    hti.screenshot(
+                        html_str,
+                        # css_str,
+                        size=(528, 800),
+                        save_as='last_patch_notes.png'
+                    )
+
+                    # Send img of Latest Release Notes
+                    await ctx.send("Digite `!update a` para ver todos os Patchs.")
+                    await ctx.send("Patch mais recente: ")
+                    await ctx.send(file=discord.File('last_patch_notes.png'))
+                    
+                
+                except Exception as error:
+                    await ctx.send("Oops... Algo de errado não está certo!")
+                    print("--> Erro ao mostrar Short Release Note Screenshot. <--")
+                    print(error)
 
         
         except Exception as error:
             print("--> Erro em Release Notes. <--")
             print(error)
-
-        try:
-            embed_page = discord.Embed(
-                title=f"TITLE",
-                description=f"{count} resultado(s)...",
-                color=0x441CB9
-            )
-            embed_page.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar_url)
-            embed_page.set_footer(text="Feito por " + self.bot.user.name, icon_url=self.bot.user.avatar_url)
-
-            embed_page.add_field(name="Name", value=f"{self.data[ind[0]][0]}", inline="True")
-            embed_page.add_field(name="Default Value", value=f"{self.data[ind[0]][1]}", inline="True")
-            embed_page.add_field(name="Description", value=f"({self.data[ind[0]][2]}). {self.data[ind[0]][3]}", inline="True")
-
-            await ctx.send(embed=embed_page)
-
-        
-        except Exception as error:
-            # await ctx.send("Ops... Deu algum erro!")
-            print(error)
-    '''
 
 
 
@@ -84,9 +145,9 @@ class Cvars(commands.Cog):
 
     @commands.command(
         name="c",
-        help="Lista os Comandos e Variáveis. Argumentos: Name, Description (Opcional)"
+        help="Lista os Comandos e Variáveis. Argumentos: 'Name'"
         )
-    async def command(self, ctx, name, description=""):
+    async def command(self, ctx, name):
 
         try:
             if len(name) < 3:# Check if input lenght is bigger than 3
