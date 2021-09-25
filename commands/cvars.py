@@ -3,9 +3,9 @@ import datetime
 import requests
 import discord
 import asyncio
+import math
 from discord.ext import commands, tasks
-from discord_components import DiscordComponents, Button, ButtonStyle
-from discord_interactions import InteractionType
+from reactionmenu import ReactionMenu, Button, ButtonType
 
 
 class Cvars(commands.Cog):
@@ -16,28 +16,52 @@ class Cvars(commands.Cog):
         self.data = []
 
 
-    # @commands.command(name="changes", help="Mostra as recentes mudanças na lista de Cvars no CS:GO. Não requer argumento")
-    # async def send_hello(self, ctx):
+    '''
+    @commands.command(name="update", help="Mostra as notas de atualização do CS:GO. Não requer argumento")
+    async def update(self, ctx):
 
-    #     try:
-    #         response = requests.get("x")
-    #         data = response.json()
-
-    #         if data:
-    #             await print(data)
-    #         else:
-    #             await print("No data!")
+        try:
+            url = "https://blog.counter-strike.net/index.php/category/updates/"
         
-    #     except Exception as error:
-    #         # await ctx.send("Ops... Deu algum erro!")
-    #         print(error)
+            response = requests.get(url)
+            response.raise_for_status()  # raises exception when not a 2xx response
 
-        # await ctx.send(response)
+            tree = BeautifulSoup(response.text, "lxml")
+
+            print(tree)
+
+
+        
+        except Exception as error:
+            print("--> Erro em Release Notes. <--")
+            print(error)
+
+        try:
+            embed_page = discord.Embed(
+                title=f"TITLE",
+                description=f"{count} resultado(s)...",
+                color=0x441CB9
+            )
+            embed_page.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar_url)
+            embed_page.set_footer(text="Feito por " + self.bot.user.name, icon_url=self.bot.user.avatar_url)
+
+            embed_page.add_field(name="Name", value=f"{self.data[ind[0]][0]}", inline="True")
+            embed_page.add_field(name="Default Value", value=f"{self.data[ind[0]][1]}", inline="True")
+            embed_page.add_field(name="Description", value=f"({self.data[ind[0]][2]}). {self.data[ind[0]][3]}", inline="True")
+
+            await ctx.send(embed=embed_page)
+
+        
+        except Exception as error:
+            # await ctx.send("Ops... Deu algum erro!")
+            print(error)
+    '''
+
+
 
     @commands.Cog.listener()
     async def on_ready(self):
         self.current_time.start()
-        DiscordComponents(self.bot)
 
 
     @tasks.loop(hours=24)
@@ -58,8 +82,6 @@ class Cvars(commands.Cog):
             print(error)
 
 
-
-
     @commands.command(
         name="c",
         help="Lista os Comandos e Variáveis. Argumentos: Name, Description (Opcional)"
@@ -76,35 +98,36 @@ class Cvars(commands.Cog):
 
                     for i, n in enumerate(self.data):
                         if name in n[0]:
-                            count += 1
                             ind.append(i)
                         else:
                             ...
-                    # print(ind)
+
+                    count = len(ind)
+                    
                     if count > 0:
                         if count <= 5:
                             try: # 1 <= Results <= 5
-                                embed_image = discord.Embed(
+                                embed_page = discord.Embed(
                                     # title=f"Resultados de '!c {name} {description}'",
                                     description=f"{count} resultado(s)...",
                                     color=0x441CB9
                                 )
-                                embed_image.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar_url)
-                                embed_image.set_footer(text="Feito por " + self.bot.user.name, icon_url=self.bot.user.avatar_url)
+                                embed_page.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar_url)
+                                embed_page.set_footer(text="Feito por " + self.bot.user.name, icon_url=self.bot.user.avatar_url)
 
-                                embed_image.add_field(name="Name", value=f"{self.data[ind[0]][0]}", inline="True")
-                                embed_image.add_field(name="Default Value", value=f"{self.data[ind[0]][1]}", inline="True")
-                                embed_image.add_field(name="Description", value=f"({self.data[ind[0]][2]}). {self.data[ind[0]][3]}", inline="True")
+                                embed_page.add_field(name="Name", value=f"{self.data[ind[0]][0]}", inline="True")
+                                embed_page.add_field(name="Default Value", value=f"{self.data[ind[0]][1]}", inline="True")
+                                embed_page.add_field(name="Description", value=f"({self.data[ind[0]][2]}). {self.data[ind[0]][3]}", inline="True")
 
                                 for i in ind:
                                     if ind.index(i) == 0:
                                         ...
                                     else:
-                                        embed_image.add_field(name="\u200b", value=f"{self.data[i][0]}", inline="True")
-                                        embed_image.add_field(name="\u200b", value=f"{self.data[i][1]}", inline="True")
-                                        embed_image.add_field(name="\u200b", value=f"({self.data[i][2]}). {self.data[i][3]}", inline="True")
+                                        embed_page.add_field(name="\u200b", value=f"{self.data[i][0]}", inline="True")
+                                        embed_page.add_field(name="\u200b", value=f"{self.data[i][1]}", inline="True")
+                                        embed_page.add_field(name="\u200b", value=f"({self.data[i][2]}). {self.data[i][3]}", inline="True")
 
-                                await ctx.send(embed=embed_image)
+                                await ctx.send(embed=embed_page)
 
 
                             except Exception as error:
@@ -112,31 +135,60 @@ class Cvars(commands.Cog):
                                 print(error)
 
                         else:# Pagination FIX
-                            try: # Results >= 5
-                                embed_image = discord.Embed(
-                                    description=f"{count} resultado(s)...",
-                                    color=0x441CB9
-                                )
-                                embed_image.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar_url)
-                                embed_image.set_footer(text="Feito por " + self.bot.user.name, icon_url=self.bot.user.avatar_url)
+                            try: # Results > 5
+                                tot_pages = math.ceil(count / 5)
+                                last_page_size = count % 5
+                                current = 0
+                                pages = []
 
-                                embed_image.add_field(name="Name", value=f"{self.data[ind[0]][0]}", inline="True")
-                                embed_image.add_field(name="Default Value", value=f"{self.data[ind[0]][1]}", inline="True")
-                                embed_image.add_field(name="Description", value=f"({self.data[ind[0]][2]}). {self.data[ind[0]][3]}", inline="True")
+                                ind_list = [ind[i:i+5] for i in range(0, len(ind), 5)]
+                                # print(ind_list)
 
-                                for i in ind:
-                                    if ind.index(i) == 0:
-                                        ...
-                                    else:
-                                        embed_image.add_field(name="\u200b", value=f"{self.data[i][0]}", inline="True")
-                                        embed_image.add_field(name="\u200b", value=f"{self.data[i][1]}", inline="True")
-                                        embed_image.add_field(name="\u200b", value=f"({self.data[i][2]}). {self.data[i][3]}", inline="True")
+                                for page in range(0, tot_pages):
 
-                                await ctx.send(embed=embed_image)
+                                    embed_page = discord.Embed(
+                                        description=f"{count} resultado(s)...",
+                                        color=0x441CB9
+                                    )
+                                    
+                                    embed_page.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar_url)
+                                    embed_page.set_footer(text="Feito por " + self.bot.user.name, icon_url=self.bot.user.avatar_url)
+
+                                    embed_page.add_field(name="Name", value=f"{self.data[ind_list[page][current]][0]}", inline="True")
+                                    embed_page.add_field(name="Default Value", value=f"{self.data[ind_list[page][current]][1]}", inline="True")
+                                    embed_page.add_field(name="Description", value=f"({self.data[ind_list[page][current]][2]}). {self.data[ind_list[page][current]][3]}", inline="True")
+                                    
+                                    current += 1
+
+                                    try:# Page based on its lenght
+                                        for c in range(1, len(ind_list[page])):
+                                            # print(f'C = {c}, Len = {len(ind_list[page])}')
+                                            embed_page.add_field(name="\u200b", value=f"{self.data[ind_list[page][current]][0]}", inline="True")
+                                            embed_page.add_field(name="\u200b", value=f"{self.data[ind_list[page][current]][1]}", inline="True")
+                                            embed_page.add_field(name="\u200b", value=f"({self.data[ind_list[page][current]][2]}). {self.data[ind_list[page][current]][3]}", inline="True")
+
+                                            current += 1
+                                        current = 0
+                                     
+                                        pages.append(embed_page)
+                                        
+
+                                    except Exception as error:
+                                        print("--> Erro em Results >= 5 - 2/2 Pagination embed_page - Page based on its lenght. <--")
+                                        print(error)
+
                                 
+                                menu = ReactionMenu(ctx, back_button='◀️', next_button='▶️', config=ReactionMenu.STATIC)
+                                
+                                for embed_page in pages:
+                                    menu.add_page(embed_page)
+
+                                # await ctx.send(embed=embed_page)
+                                await menu.start()
+
 
                             except Exception as error:
-                                print("--> Erro em Results >= 5 - Pagination embed_image - <--")
+                                print("--> Erro em Results >= 5 - 1/2 Pagination embed_page - <--")
                                 print(error)
 
 
