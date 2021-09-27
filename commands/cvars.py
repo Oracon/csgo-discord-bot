@@ -4,10 +4,9 @@ import requests
 import discord
 import asyncio
 import math
-
 import os
 from selenium import webdriver
-
+from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from discord.ext import commands, tasks
 from reactionmenu import ReactionMenu, Button, ButtonType
@@ -33,16 +32,16 @@ class Cvars(commands.Cog):
         self.bot = bot
         self.data = []
 
-        self.chrome_options = webdriver.Chrome_Options()
-        self.chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-        self.chrome_options.add_argument("--headless")
-        self.chrome_options.add_argument("--disable-dev-shm-usage")
-        self.chrome_options.add_argument("--no-sandbox")
-        self.driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=self.chrome_options)
+        #self.chrome_options = webdriver.Chrome()
+        #self.chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+        #self.chrome_options.add_argument("--headless")
+        #self.chrome_options.add_argument("--disable-dev-shm-usage")
+        #self.chrome_options.add_argument("--no-sandbox")
+        #self.driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=self.chrome_options)
+        self.driver = webdriver.Chrome(ChromeDriverManager().install())
 
         # self.drive.get("https://www.google.com")
         # print(driver.page_source)
-
 
 
     # FIXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ON HEROKU

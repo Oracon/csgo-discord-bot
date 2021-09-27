@@ -6,3 +6,5 @@ beautifulsoup4
 reactionmenu
 html2image
 selenium
+chromedriver
+webdriver-manager
