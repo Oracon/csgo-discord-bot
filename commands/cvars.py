@@ -31,20 +31,22 @@ class Cvars(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.data = []
-
+        
+        # Installing chrome manually
         #self.chrome_options = webdriver.Chrome()
         #self.chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
         #self.chrome_options.add_argument("--headless")
         #self.chrome_options.add_argument("--disable-dev-shm-usage")
         #self.chrome_options.add_argument("--no-sandbox")
         #self.driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=self.chrome_options)
+
+        # Installing chrome via ChromeDriverManager
         self.driver = webdriver.Chrome(ChromeDriverManager().install())
 
         # self.drive.get("https://www.google.com")
         # print(driver.page_source)
 
 
-    # FIXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ON HEROKU
     @commands.command(name="update", help="Mostra Notas de Atualização mais recente. Argumentos: 'all' (Opcional)")
     async def update(self, ctx, option=''):
 
