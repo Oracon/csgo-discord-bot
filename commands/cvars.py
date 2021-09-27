@@ -4,6 +4,10 @@ import requests
 import discord
 import asyncio
 import math
+
+import os
+from selenium import webdriver
+
 from bs4 import BeautifulSoup
 from discord.ext import commands, tasks
 from reactionmenu import ReactionMenu, Button, ButtonType
@@ -29,8 +33,19 @@ class Cvars(commands.Cog):
         self.bot = bot
         self.data = []
 
+        self.chrome_options = webdriver.Chrome_Options()
+        self.chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+        self.chrome_options.add_argument("--headless")
+        self.chrome_options.add_argument("--disable-dev-shm-usage")
+        self.chrome_options.add_argument("--no-sandbox")
+        self.driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=self.chrome_options)
 
-    
+        # self.drive.get("https://www.google.com")
+        # print(driver.page_source)
+
+
+
+    # FIXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ON HEROKU
     @commands.command(name="update", help="Mostra Notas de Atualização mais recente. Argumentos: 'all' (Opcional)")
     async def update(self, ctx, option=''):
 
@@ -89,7 +104,6 @@ class Cvars(commands.Cog):
                         </html>
                     """
 
-                    # No Need for CSS
                     # css_str = ['body {background-color: #0b0e13;}', 'body {color: #bababa;}']
                     
                     # Instantiate html2image
